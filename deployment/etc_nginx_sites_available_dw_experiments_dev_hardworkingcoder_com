@@ -1,0 +1,14 @@
+server {
+	listen 80;
+	listen [::]:80;
+
+    if ($http_x_forwarded_proto = "http") {
+        return 301 https://$server_name$request_uri;
+    }
+    
+	server_name dw_experiments_dev.hardworkingcoder.com;
+    location / {	#
+        include uwsgi_params;
+        uwsgi_pass unix:/home/main/dw_experiments_dev/dw_experiments_dev.sock;
+    }
+}
