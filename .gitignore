@@ -1,2 +1,4 @@
 _config.py
 uwsgi.log
+*.pyc
+env/
