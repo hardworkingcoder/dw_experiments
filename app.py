@@ -30,6 +30,7 @@ import ast
 oauth = OAuth()
 from sqlalchemy.orm.attributes import flag_modified
 import uuid
+from flask import jsonify
 
 @app.route('/login', strict_slashes=False)
 def login():
