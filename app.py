@@ -41,7 +41,8 @@ def login():
 def dwoauth():
     print 'request args for dwoauth', request.args
     code = request.args.get('code')
-    url = 'https://data.world/oauth/authorize?code=%s&client_id=%s&client_secret=%s&redirect_uri=http://dw_experiments_dev.hardworkingcoder.com/dwoauth&grant_type=authorization_code' % (code, app.config['DATADOTWORLD_CLIENT_ID'], app.config['DATADOTWORLD_CLIENT_SECRET'].replace('#', '%23'))
+    # &redirect_uri=http://dw_experiments_dev.hardworkingcoder.com/dwoauth
+    url = 'https://data.world/oauth/authorize?code=%s&client_id=%s&client_secret=%s&grant_type=authorization_code' % (code, app.config['DATADOTWORLD_CLIENT_ID'], app.config['DATADOTWORLD_CLIENT_SECRET'].replace('#', '%23'))
     response = requests.get(url)
     print url
     try:
