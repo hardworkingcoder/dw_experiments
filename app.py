@@ -39,19 +39,17 @@ def login():
 
 @app.route('/dwoauth', strict_slashes=False)
 def dwoauth():
-    print 'request args for dwoauth', request.args
-    if 'access_token' in request.args:
-        print 'Access token!', request.args
-        return jsonify(request.args)
     code = request.args.get('code')
-    
-    url = 'https://data.world/oauth/authorize?code=%s&client_id=%s&client_secret=%s&redirect_uri=http://dw_experiments_dev.hardworkingcoder.com/dwoauth&grant_type=authorization_code' % (code, app.config['DATADOTWORLD_CLIENT_ID'], app.config['DATADOTWORLD_CLIENT_SECRET'].replace('#', '%23'))
-    response = requests.get(url)
-    print url
-    try:
-        print response.text
-    except:
-        print response.json()
+    params = {
+      'code': code,
+      'client_id': app.config['DATADOTWORLD_CLIENT_ID'],
+      'client_secret': app.config['DATADOTWORLD_CLIENT_SECRET'].replace('#', '%23'),
+      'grant_type': 'authorization_code'
+    }
+    params_as_str = '&'.join(['='.join(pair) for pair in params.items()])
+    url = 'https://data.world/oauth/access_token?%s' % (params_as_str)
+    response = requests.post(url)
+    return response.text
 
 
 @failsafe
