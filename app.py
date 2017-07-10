@@ -44,7 +44,10 @@ def dwoauth():
     url = 'https://data.world/oauth/authorize?code=%s&client_id=%s&client_secret=%s&redirect_uri=http://dw_experiments_dev.hardworkingcoder.com/dwoauth&grant_type=authorization_code' % (code, app.config['DATADOTWORLD_CLIENT_ID'], app.config['DATADOTWORLD_CLIENT_SECRET'].replace('#', '%23'))
     response = requests.get(url)
     print url
-    return jsonify(response.json())
+    try:
+        return jsonify(response.json())
+    except:
+        return response.text
 
 
 @failsafe
