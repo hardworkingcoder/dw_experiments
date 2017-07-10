@@ -33,7 +33,7 @@ import uuid
 
 @app.route('/login', strict_slashes=False)
 def login():
-    location = 'https://data.world/oauth/authorize?client_id=%s&redirect_uri=http://localhost/dwoauth&response_type=code' % app.config['DATADOTWORLD_CLIENT_ID']
+    location = 'https://data.world/oauth/authorize?client_id=%s&redirect_uri=https://dw_experiments_dev.hardworkingcoder.com/dwoauth&response_type=code' % app.config['DATADOTWORLD_CLIENT_ID']
     return flask.redirect(location, code=302)
 
 @failsafe
