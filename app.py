@@ -40,7 +40,7 @@ def login():
 def dwoauth():
      code = request.args.get('code')
      response = requests.get('https://data.world/oauth/authorize?code=%s&client_id=%s&client_secret=%s&grant_type=authorization_code' % (code, app.config['DATADOTWORLD_CLIENT_ID'], app.config['DATADOTWORLD_CLIENT_SECRET']))
-     return response.json()
+     return jsonify(response.json())
 
 @failsafe
 def create_app():
