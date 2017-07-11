@@ -39,8 +39,8 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 @login_manager.user_loader
-def load_user(uuid):
-    return User.query.get(uuid)
+def load_user(session_token):
+    return models.User.query.filter_by(session_token=session_token).first()
 
 @app.route('/login', strict_slashes=False)
 def login():
@@ -82,19 +82,18 @@ def update_db_with_access_and_user_info(access_info, user_info):
         db.session.commit()
     return user
 
-def update_db_session_for_user(user):
-    session_row = models.Session(id = user.id)
-    db.session.add(session_row)
-    db.session.commit()
-    return session_row
-
 row2dict = lambda r: {c.name: str(getattr(r, c.name)) for c in r.__table__.columns}
+
+@app.route('/api/get_users_info')
+def get_users_info():
+    return jsonify(row2dict(load_user(session['user_id'])))
 
 @app.route('/dwoauth', strict_slashes=False)
 def dwoauth():
     access_info = get_access_info(request.args.get('code'))
     user_info = get_user_info(access_info['access_token'])
     user = update_db_with_access_and_user_info(access_info, user_info)
+    session.clear()
     login_user(user, True)
     return flask.redirect('/', code=302)
 

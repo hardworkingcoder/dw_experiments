@@ -14,6 +14,8 @@ class User(UserMixin, db.Model):
 
     id = Column(UUID(as_uuid=True),
         server_default=sqlalchemy.text("uuid_generate_v4()"), primary_key=True)
+    session_token = Column(UUID(as_uuid=True),
+        server_default=sqlalchemy.text("uuid_generate_v4()"), unique=True)
     permissions_group = db.Column(db.String, default='user') # user, staff, admin
     ddw_access_token = db.Column(db.String)
     ddw_token_expires_in = db.Column(db.Integer)
@@ -23,3 +25,6 @@ class User(UserMixin, db.Model):
     ddw_user_created = db.Column(db.Date)
     ddw_user_updated = db.Column(db.Date)
     data = db.Column(postgresql.JSONB, nullable=True)
+
+    def get_id(self):
+        return unicode(self.session_token)
