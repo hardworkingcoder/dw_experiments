@@ -24,3 +24,4 @@ Flask-Migrate
 csvkit
 python-slugify
 datadotworld
+flask-login
