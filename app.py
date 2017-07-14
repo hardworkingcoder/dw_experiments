@@ -34,6 +34,14 @@ from flask import jsonify
 import requests
 from flask_login import LoginManager, UserMixin, login_user, logout_user,\
     current_user
+from datadotworld.config import DefaultConfig
+from datadotworld.datadotworld import DataDotWorld
+import datadotworld
+
+class InlineConfig(DefaultConfig):
+    def __init__(self, token):
+        super(InlineConfig, self).__init__()
+        self._auth_token = token
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -102,9 +110,54 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/api/list_users_datasets')
+def list_users_datasets():
+    import requests
+
+    url = "https://api.data.world/v0/user/datasets/own"
+
+    payload = "{}"
+    headers = {'authorization': 'Bearer <<%s>>' % (load_user(session['user_id']).ddw_access_token)}
+
+    response = requests.request("GET", url, data=payload, headers=headers)
+
+    return jsonify(json.loads(response.text))
+
 @app.route('/', strict_slashes=False)
 def index():
     return send_from_directory('static', 'index.html')
+
+def get_ddw(user_id):
+    token = load_user(user_id).ddw_access_token
+    ddw = DataDotWorld(config=InlineConfig(token))
+    ddw_client = ddw.api_client
+    return ddw, ddw_client
+
+@app.route('/api/delete_file', strict_slashes=False, methods=['POST'])
+def delete_file():
+    ddw, ddw_client = get_ddw(session['user_id'])
+    ddw_client.delete_files('%s/%s' % (request.form['owner'], request.form['id']), [request.form['filename']])
+    return jsonify({'success': True})
+
+def change_to_csv(filename):
+    filename = filename.lower()
+    index_of_dot = filename.index('.')
+    return filename[:index_of_dot] + '.csv'
+
+@app.route('/api/rename_file', strict_slashes=False, methods=['POST'])
+def rename_file():
+    ddw, ddw_client = get_ddw(session['user_id'])
+    
+    from os.path import expanduser, join
+    home = expanduser("~")
+    local_ddw_data = join(home, '.dw/cache/%s/%s/latest/data/' % (request.form['owner'], request.form['id']))
+    print 'load dataset', ddw.load_dataset('%s/%s' % (request.form['owner'], request.form['id']), force_update=True)
+    print 'directories', join(local_ddw_data, change_to_csv(request.form['filename'])), join(local_ddw_data, change_to_csv(request.form['new_filename']))
+    os.rename(join(local_ddw_data, change_to_csv(request.form['filename'])), join(local_ddw_data, change_to_csv(request.form['new_filename'])))
+    #os.rename(join(local_ddw_data, change_to_csv(request.form['filename'])), change_to_csv(request.form['new_filename']))
+    ddw_client.delete_files('%s/%s' % (request.form['owner'], request.form['id']), [request.form['filename']])
+    ddw_client.upload_files('%s/%s' % (request.form['owner'], request.form['id']), [join(local_ddw_data, change_to_csv(request.form['new_filename']))])
+    return jsonify({'success': True})
 
 @failsafe
 def create_app():
