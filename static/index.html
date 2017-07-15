@@ -1,0 +1,121 @@
+<html>
+    <head>
+        <title>DDW Experiments by Tim Clemans</title> 
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" crossorigin="anonymous" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://alexgibson.github.io/notify.js/js/notify.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.2.6/vue.js"></script>
+        <style>
+            body {margin:0;font-size:1em;}
+            #account_links {border-bottom:1px solid #CCC;padding:10px;text-align:right}
+            h1, #main {padding:10px;}
+            td {border:1px solid #000}
+            table {border-collapse:collapse; width:100%}
+            td input {width:100%}
+            .dataset-name { background:blue;color:#FFF;}
+            .file-name { padding:5px 5px 5px 30px}
+            .delete {background:red;color:#FFF}
+        </style>
+        <script type="text/javascript">
+            $(function() {
+                var app = new Vue({
+                    el: '#app',
+                    data: {
+                        loggedIn: false,
+                        nickname: '',
+                        datasetsOwnedByUser: {}
+                    },
+                    created: function() {
+                        $.get('/api/get_users_info', function(data) {
+                            app.loggedIn = true;
+                            app.nickname = data.nickname;
+
+                        });
+                        this.updateDatasetsOwnedByUser()
+                    },
+                    methods: {
+                        createDataset: function() {
+                            $.post('/api/create_dataset', {
+                                'title': $('#title_of_new_dataset').val(),
+                                'license': $('#license_of_new_dataset option:selected').text(),
+                                'visibility': $("input[name=for_new_dataset_public_or_private]:checked").val()
+                            }, function() {
+                                app.updateDatasetsOwnedByUser();
+                                $('#title_of_new_dataset').val('');
+                            });
+                        },
+                        deleteFile: function(owner, id, filename) {
+                            $.post('/api/delete_file', {
+                                'owner': owner,
+                                'id': id,
+                                'filename': filename
+                            }, function() {
+                                app.updateDatasetsOwnedByUser();
+                            });
+                        },
+                        renameFile: function(owner, id, filename, newFilename) {
+                            $.post('/api/rename_file', {
+                                'owner': owner,
+                                'id': id,
+                                'filename': filename,
+                                'new_filename': $('#renameinput'+owner+id+filename.replace('.', '_')).val()
+                            }, function() {
+                                app.updateDatasetsOwnedByUser();
+                            });
+                        },
+                        moveFile: function(owner, current_id, filename, event) {
+                            if (event.target.value == '') {
+                                return
+                            }
+                            $.post('/api/move_file', {
+                                'owner': owner,
+                                'current_id': current_id,
+                                'filename': filename,
+                                'target_id': event.target.value
+                            }, function() {
+                                app.updateDatasetsOwnedByUser();
+                            });
+                        },
+                        updateDatasetsOwnedByUser: function() {
+                            $.get('/api/list_users_datasets', function(data) {
+                                app.datasetsOwnedByUser = Object.assign({}, app.datasetsOwnedByUser, data)
+
+                            });
+                        }
+                    }
+                })
+
+            });
+        </script>
+    </head>
+    <body>
+        <div id="app">
+            <div id="account_links" v-if="loggedIn"><strong>{{ nickname }}</strong> | <a href="/login">Logout</a></div>
+            <div id="account_links" v-else><a href="/login">Login</a></div>
+            <h1>DDW Experiments by <a href="https://hardworkingcoder">Tim Clemans</a></h1>
+            <div id="main">
+                <h2>Create a dataset</h2>
+                <div>
+                    <strong>Title of dataset (30 characters or less): <input type="text" id="title_of_new_dataset" maxlength="30" /></strong>
+                    <strong>License:</strong> <select id="license_of_new_dataset"><option v-for="license in ['Public Domain', 'PDDL', 'CC-0', 'CC-BY', 'ODC-BY', 'CC-BY-SA', 'ODC-ODbL', 'CC BY-NC', 'CC BY-NC-SA', 'Other']">{{ license }}</option></select>
+                    <strong>Visibility:</strong> <input type="radio" name="for_new_dataset_public_or_private" value="OPEN" checked> Public
+                    <input type="radio" name="for_new_dataset_public_or_private" value="PRIVATE"> Private
+                    <button v-on:click="createDataset">Create dataset</button>
+                </div>
+                <h2>My datasets</h2>
+                <table>
+                    <template v-for="dataset in datasetsOwnedByUser.records">
+                        <tr>
+                            <td  class="dataset-name" colspan="2">{{ dataset.title }}: {{ dataset.description }}</td> 
+                        </tr>
+                        <tr v-for="file in dataset.files">
+                        <td class="file-name"><input type="text" v-bind:value="file.name" @keyup.enter="renameFile(dataset.owner, dataset.id, file.name)" v-bind:id="'renameinput'+dataset.owner+dataset.id+file.name.replace('.', '_')" /></td>
+                            <td><button v-on:click="renameFile(dataset.owner, dataset.id, file.name)">Rename</button> <strong>Move to:</strong> <select @change="moveFile(dataset.owner, dataset.id, file.name, $event)"><option></option><option v-for="datasetname in datasetsOwnedByUser.records" v-if="datasetname.id != dataset.id">{{ datasetname.id }}</select> <button v-on:click="deleteFile(dataset.owner, dataset.id, file.name)" class="delete">Delete</button></td>
+                        </tr>
+                    </template>
+                </table>
+            </div>
+        </div>
+    </body>
