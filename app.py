@@ -133,6 +133,12 @@ def get_ddw(user_id):
     ddw_client = ddw.api_client
     return ddw, ddw_client
 
+@app.route('/api/create_dataset', strict_slashes=False, methods=['POST'])
+def create_dataset():
+    ddw, ddw_client = get_ddw(session['user_id'])
+    owner = load_user(session['user_id']).social_id
+    return ddw_client.create_dataset(owner, title=request.form['title'], license=request.form['license'], visibility=request.form['visibility'])
+
 @app.route('/api/delete_file', strict_slashes=False, methods=['POST'])
 def delete_file():
     ddw, ddw_client = get_ddw(session['user_id'])
@@ -151,12 +157,22 @@ def rename_file():
     from os.path import expanduser, join
     home = expanduser("~")
     local_ddw_data = join(home, '.dw/cache/%s/%s/latest/data/' % (request.form['owner'], request.form['id']))
-    print 'load dataset', ddw.load_dataset('%s/%s' % (request.form['owner'], request.form['id']), force_update=True)
-    print 'directories', join(local_ddw_data, change_to_csv(request.form['filename'])), join(local_ddw_data, change_to_csv(request.form['new_filename']))
+    ddw.load_dataset('%s/%s' % (request.form['owner'], request.form['id']), force_update=True)
     os.rename(join(local_ddw_data, change_to_csv(request.form['filename'])), join(local_ddw_data, change_to_csv(request.form['new_filename'])))
-    #os.rename(join(local_ddw_data, change_to_csv(request.form['filename'])), change_to_csv(request.form['new_filename']))
     ddw_client.delete_files('%s/%s' % (request.form['owner'], request.form['id']), [request.form['filename']])
     ddw_client.upload_files('%s/%s' % (request.form['owner'], request.form['id']), [join(local_ddw_data, change_to_csv(request.form['new_filename']))])
+    return jsonify({'success': True})
+
+@app.route('/api/move_file', strict_slashes=False, methods=['POST'])
+def move_file():
+    ddw, ddw_client = get_ddw(session['user_id'])
+    
+    from os.path import expanduser, join
+    home = expanduser("~")
+    local_ddw_data = join(home, '.dw/cache/%s/%s/latest/data/' % (request.form['owner'], request.form['current_id']))
+    ddw.load_dataset('%s/%s' % (request.form['owner'], request.form['current_id']), force_update=True)
+    ddw_client.upload_files('%s/%s' % (request.form['owner'], request.form['target_id']), [join(local_ddw_data, change_to_csv(request.form['filename']))])
+    ddw_client.delete_files('%s/%s' % (request.form['owner'], request.form['current_id']), [request.form['filename']])
     return jsonify({'success': True})
 
 @failsafe
