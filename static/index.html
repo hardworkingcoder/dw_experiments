@@ -13,7 +13,7 @@
             h1, #main {padding:10px;}
             td {border:1px solid #000}
             table {border-collapse:collapse; width:100%}
-            td input {width:100%}
+            td.file-name input {width:100%}
             .dataset-name { background:blue;color:#FFF;}
             .file-name { padding:5px 5px 5px 30px}
             .delete {background:red;color:#FFF}
@@ -81,18 +81,37 @@
                         updateDatasetsOwnedByUser: function() {
                             $.get('/api/list_users_datasets', function(data) {
                                 app.datasetsOwnedByUser = Object.assign({}, app.datasetsOwnedByUser, data)
-
+                            });
+                        },
+                        uploadFile: function(datasetOwner, datasetId) {
+                            var fd = new FormData();
+                            var file_data = $('#file-'+datasetOwner+'-'+datasetId)[0].files; // for multiple files
+                            console.log('#file-'+datasetOwner+'-'+datasetId)
+                            console.log($('#file-'+datasetOwner+'-'+datasetId).file)
+                            for(var i = 0;i<file_data.length;i++){
+                                fd.append("file_"+i, file_data[i]);
+                            }
+                            fd.append('owner',datasetOwner);
+                            fd.append('id',datasetId);
+                            $.ajax({
+                                url: 'api/upload_file',
+                                data: fd,
+                                contentType: false,
+                                processData: false,
+                                type: 'POST',
+                                success: function() {
+                                    app.updateDatasetsOwnedByUser()
+                                }
                             });
                         }
                     }
                 })
-
             });
-        </script>
+            </script>
     </head>
     <body>
-        <div id="app">
-            <div id="account_links" v-if="loggedIn"><strong>{{ nickname }}</strong> | <a href="/login">Logout</a></div>
+    <div id="app">
+    <div id="account_links" v-if="loggedIn"><strong>{{ nickname }}</strong> | <a href="/login">Logout</a></div>
             <div id="account_links" v-else><a href="/login">Login</a></div>
             <h1>DDW Experiments by <a href="https://hardworkingcoder">Tim Clemans</a></h1>
             <div id="main">
@@ -108,7 +127,13 @@
                 <table>
                     <template v-for="dataset in datasetsOwnedByUser.records">
                         <tr>
-                            <td  class="dataset-name" colspan="2">{{ dataset.title }}: {{ dataset.description }}</td> 
+                            <td  class="dataset-name" colspan="2">
+                               <div style="float:right">
+                                   <input type="file" v-bind:id="'file-'+dataset.owner+'-'+dataset.id">
+                                   <button v-on:click="uploadFile(dataset.owner, dataset.id)">Upload</button>
+                               </div>
+                               {{ dataset.title }}: {{ dataset.description }}
+                            </td> 
                         </tr>
                         <tr v-for="file in dataset.files">
                         <td class="file-name"><input type="text" v-bind:value="file.name" @keyup.enter="renameFile(dataset.owner, dataset.id, file.name)" v-bind:id="'renameinput'+dataset.owner+dataset.id+file.name.replace('.', '_')" /></td>

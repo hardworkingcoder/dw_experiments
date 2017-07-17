@@ -175,6 +175,25 @@ def move_file():
     ddw_client.delete_files('%s/%s' % (request.form['owner'], request.form['current_id']), [request.form['filename']])
     return jsonify({'success': True})
 
+@app.route('/api/upload_file', strict_slashes=False, methods=['POST'])
+def upload_file():
+    print 'UF', request.form
+    print 'R', request.files
+    ddw, ddw_client = get_ddw(session['user_id'])
+    
+    from os.path import expanduser, join
+    home = expanduser("~")
+    file = request.files['file_0']
+    # if user does not select file, browser also
+    # submit a empty part without filename
+    if file.filename == '':
+        jsonify({'success': False})
+    if file:
+        filename = file.filename
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    ddw_client.upload_files('%s/%s' % (request.form['owner'], request.form['id']), [join(app.config['UPLOAD_FOLDER'], filename)])
+    return jsonify({'success': True})
+
 @failsafe
 def create_app():
     return app
