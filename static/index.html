@@ -118,7 +118,7 @@
             <div id="main">
                 <h2>Create a dataset</h2>
                 <div>
-                    <strong>Title of dataset (30 characters or less): <input type="text" id="title_of_new_dataset" maxlength="30" /></strong>
+                    <strong>Title of dataset (60 characters or less): <input type="text" id="title_of_new_dataset" maxlength="60" /></strong>
                     <strong>License:</strong> <select id="license_of_new_dataset"><option v-for="license in ['Public Domain', 'PDDL', 'CC-0', 'CC-BY', 'ODC-BY', 'CC-BY-SA', 'ODC-ODbL', 'CC BY-NC', 'CC BY-NC-SA', 'Other']">{{ license }}</option></select>
                     <strong>Visibility:</strong> <input type="radio" name="for_new_dataset_public_or_private" value="OPEN" checked> Public
                     <input type="radio" name="for_new_dataset_public_or_private" value="PRIVATE"> Private
