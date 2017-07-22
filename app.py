@@ -78,11 +78,11 @@ def update_db_with_access_and_user_info(access_info, user_info):
     user_exists = db.session.query(models.User.social_id).filter_by(social_id=user_info['id']).scalar() is not None
     if user_exists:
         user = models.User.query.filter_by(social_id=user_info['id']).first()
-        ddw_access_token = access_info['access_token']
-        ddw_token_expires_in = access_info['expires_in']
-        ddw_avatar_url = user_info['avatarUrl']
-        nickname = user_info['displayName']
-        ddw_user_updated = user_info['updated']
+        user.ddw_access_token = access_info['access_token']
+        user.ddw_token_expires_in = access_info['expires_in']
+        user.ddw_avatar_url = user_info['avatarUrl']
+        user.nickname = user_info['displayName']
+        user.ddw_user_updated = user_info['updated']
         db.session.commit()
     else:
         user = models.User(ddw_access_token=access_info['access_token'], ddw_token_expires_in=access_info['expires_in'], ddw_avatar_url=user_info['avatarUrl'], nickname=user_info['displayName'], social_id=user_info['id'], ddw_user_created=user_info['created'], ddw_user_updated=user_info['updated'])
